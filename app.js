@@ -10,6 +10,18 @@
 
   const norm = (s) => (s || "").toLowerCase().replace(/[ـّ]/g, "").trim();
 
+  function linkInfo(url) {
+    if (!url) return null;
+    if (/youtube\.com|youtu\.be/i.test(url)) {
+      const playlist = /[?&]list=/.test(url) && !/[?&]v=/.test(url);
+      return { type: "youtube", label: playlist ? "Плейлист на YouTube" : "Смотреть на YouTube", icon: "▶" };
+    }
+    if (/t\.me|telegram/i.test(url)) {
+      return { type: "telegram", label: "Открыть в Telegram", icon: "✈" };
+    }
+    return { type: "other", label: "Открыть урок", icon: "↗" };
+  }
+
   function matches(lesson) {
     if (activeLang !== "all" && lesson.lang !== activeLang) return false;
     if (!query) return true;
@@ -30,12 +42,16 @@
       section.className = "category";
       section.id = cat.id;
 
+      const available = lessons.filter((l) => l.url).length;
+      const countLabel = available
+        ? `${available} / ${lessons.length}`
+        : `${lessons.length}`;
       const head = document.createElement("div");
       head.className = "cat-head";
       head.innerHTML = `
         <h2>${cat.titleAr}</h2>
         <span class="ru">${cat.titleRu}</span>
-        <span class="count">${lessons.length}</span>`;
+        <span class="count" title="Доступно ссылок / всего уроков">${countLabel}</span>`;
       section.appendChild(head);
 
       const grid = document.createElement("div");
@@ -45,12 +61,17 @@
         card.className = "card";
         card.dataset.lang = l.lang;
         const teacher = l.teacher ? `<div class="teacher">${l.teacher}</div>` : "";
+        const link = linkInfo(l.url);
+        const action = link
+          ? `<a class="btn ${link.type}" href="${l.url}" target="_blank" rel="noopener">
+               <span class="ic">${link.icon}</span>${link.label}</a>`
+          : `<span class="badge soon">скоро</span>`;
         card.innerHTML = `
           <div class="title">${l.title}</div>
           ${teacher}
           <div class="badges">
             <span class="badge ${l.lang}">${l.lang === "ar" ? "عربي" : "Рус"}</span>
-            <span class="badge soon">скоро</span>
+            ${action}
           </div>`;
         grid.appendChild(card);
       });
@@ -63,7 +84,10 @@
     }
 
     const total = DATA.categories.reduce((n, c) => n + c.lessons.length, 0);
-    elStats.textContent = `Показано ${totalShown} из ${total} уроков · ${DATA.categories.length} разделов`;
+    const withLinks = DATA.categories.reduce(
+      (n, c) => n + c.lessons.filter((l) => l.url).length, 0);
+    elStats.textContent =
+      `Показано ${totalShown} из ${total} уроков · ${DATA.categories.length} разделов · со ссылками: ${withLinks}`;
   }
 
   function buildNav() {
