@@ -115,7 +115,7 @@
     });
   });
 
-  fetch("data.json")
+  fetch("data.json?v=" + Date.now(), { cache: "no-store" })
     .then((r) => r.json())
     .then((data) => {
       DATA = data;
