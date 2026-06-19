@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منهج العلم — Уроки по исламским наукам</title>
+  <meta name="description" content="Собрание уроков по исламским наукам: тафсир, хадис, фикх, акыда, арабский язык и др." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <span class="brand-ar">منهج العلم</span>
+        <span class="brand-ru">Уроки по исламским наукам</span>
+      </div>
+      <div class="controls">
+        <input id="search" type="search" placeholder="Поиск по урокам, книгам, преподавателям…" autocomplete="off" />
+        <div class="lang-filter" role="group" aria-label="Язык уроков">
+          <button data-lang="all" class="active">Все</button>
+          <button data-lang="ar">عربي</button>
+          <button data-lang="ru">Рус</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="cat-nav">
+    <div class="container" id="catNav"></div>
+  </nav>
+
+  <main class="container" id="content"></main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p id="stats"></p>
+      <p class="muted">Ссылки на уроки будут добавлены позже.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
