@@ -6,7 +6,11 @@
       "titleRu": "Тафсир",
       "lessons": [
         { "title": "تفسير البيضاوي", "teacher": "رشدي القلم", "lang": "ar" },
-        { "title": "تفسير النسفي", "teacher": "علي هاني العقرباوي", "lang": "ar", "url": "https://www.youtube.com/playlist?list=PLSfhlQ01CKZytmtPf_6ADhYzDE41HxdCZ" },
+        { "title": "تفسير النسفي", "teacher": "علي هاني العقرباوي", "lang": "ar", "url": "https://www.youtube.com/playlist?list=PLSfhlQ01CKZytmtPf_6ADhYzDE41HxdCZ",
+  "episodes": [
+    { "title": "Урок 1", "url": "https://youtu.be/96dtHoStgt4?si=llYOJVfFtr7or8lN" },
+    { "title": "Урок 2", "url": "https://youtu.be/WQIYM9JCnVs?si=3K0vwKzSX18ev_pj" },
+    { "title": "Урок 3", "url": "https://youtu.be/p_T5RythJqo?si=YxccHWcIHzVid2Ge"  },
         { "title": "تفسير النسفي", "teacher": "حسان الهندي", "lang": "ar" },
         { "title": "تفسير النسفي", "teacher": "عبد السلام شنار", "lang": "ar" },
         { "title": "تفسير الجلالين", "teacher": "لبيب نجيب", "lang": "ar" },
