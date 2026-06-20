@@ -1,196 +1,264 @@
 (() => {
-  let DATA = { categories: [] };
-  let activeLang = "all";
-  let query = "";
+  let DATA = { sections: [], library: [] };
+  const app = document.getElementById("app");
+  const authBox = document.getElementById("authBox");
 
-  const elContent = document.getElementById("content");
-  const elNav = document.getElementById("catNav");
-  const elStats = document.getElementById("stats");
-  const elSearch = document.getElementById("search");
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  const norm = (s) => (s || "").toLowerCase().replace(/[ـّ]/g, "").trim();
+  const find = (arr, id) => (arr || []).find((x) => x.id === id);
 
-  function linkInfo(url) {
-    if (!url) return null;
-    if (/youtube\.com|youtu\.be/i.test(url)) {
-      const playlist = /[?&]list=/.test(url) && !/[?&]v=/.test(url);
-      return { type: "youtube", label: playlist ? "Плейлист на YouTube" : "Смотреть на YouTube", icon: "▶" };
+  /* ---------- Header auth ---------- */
+  function renderAuthBox() {
+    const u = Auth.currentUser();
+    if (u) {
+      authBox.innerHTML = `
+        <span class="user-chip">${esc(u.name)}</span>
+        <button class="btn btn-outline" id="logoutBtn">Выйти</button>`;
+      document.getElementById("logoutBtn").onclick = () => {
+        Auth.logout();
+        renderAuthBox();
+        router();
+      };
+    } else {
+      authBox.innerHTML = `<a class="btn" href="#/login">Войти</a>`;
     }
-    if (/t\.me|telegram/i.test(url)) {
-      return { type: "telegram", label: "Открыть в Telegram", icon: "✈" };
-    }
-    return { type: "other", label: "Открыть урок", icon: "↗" };
   }
 
-  function hasContent(l) {
-    return !!l.url || (Array.isArray(l.episodes) && l.episodes.length > 0);
+  /* ---------- Pages ---------- */
+  function homePage() {
+    const cards = DATA.sections.map((s) => `
+      <a class="card" href="#/section/${esc(s.id)}">
+        <h3>${esc(s.title)}</h3>
+        <p>${esc(s.description || "")}</p>
+        <div class="meta">Циклов: ${s.cycles ? s.cycles.length : 0}</div>
+      </a>`).join("");
+    app.innerHTML = `
+      <h1 class="page-title">Разделы</h1>
+      <p class="page-sub">Выберите раздел исламских наук.</p>
+      <div class="card-list">${cards}</div>`;
   }
 
-  function matches(lesson) {
-    if (activeLang !== "all" && lesson.lang !== activeLang) return false;
-    if (!query) return true;
-    const q = norm(query);
-    return norm(lesson.title).includes(q) || norm(lesson.teacher).includes(q);
+  function sectionPage(id) {
+    const s = find(DATA.sections, id);
+    if (!s) return notFound();
+    const cards = (s.cycles || []).map((c) => `
+      <a class="card" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}">
+        <h3>${esc(c.title)}</h3>
+        <p>${esc(c.level || "")}</p>
+        <div class="meta">Уроков: ${c.lessons ? c.lessons.length : 0}</div>
+      </a>`).join("") || `<p class="empty">Циклы скоро появятся.</p>`;
+    app.innerHTML = `
+      <div class="breadcrumbs"><a href="#/">Разделы</a> / ${esc(s.title)}</div>
+      <h1 class="page-title">${esc(s.title)}</h1>
+      <p class="page-sub">${esc(s.description || "")}</p>
+      <div class="card-list">${cards}</div>`;
   }
 
-  // ---- Модальная панель с отдельными уроками ----
-  const modal = document.getElementById("modal");
-  const modalBody = document.getElementById("modalBody");
-
-  function openModal(l) {
-    const link = l.url ? linkInfo(l.url) : null;
-    const playlistBtn = link
-      ? `<a class="btn ${link.type}" href="${l.url}" target="_blank" rel="noopener">
-           <span class="ic">${link.icon}</span>${link.label}</a>`
-      : "";
-
-    let episodesHtml = "";
-    if (Array.isArray(l.episodes) && l.episodes.length) {
-      const items = l.episodes.map((ep, i) => {
-        const epLink = linkInfo(ep.url);
-        const title = ep.title || `Урок ${i + 1}`;
-        return ep.url
-          ? `<a class="ep" href="${ep.url}" target="_blank" rel="noopener">
-               <span class="ep-num">${i + 1}</span>
-               <span class="ep-title">${title}</span>
-               <span class="ep-ic ${epLink ? epLink.type : ""}">${epLink ? epLink.icon : "↗"}</span>
-             </a>`
-          : `<div class="ep ep-soon">
-               <span class="ep-num">${i + 1}</span>
-               <span class="ep-title">${title}</span>
-               <span class="ep-ic">скоро</span>
-             </div>`;
-      }).join("");
-      episodesHtml = `<div class="ep-list">${items}</div>`;
-    }
-
-    modalBody.innerHTML = `
-      <div class="modal-head" dir="${l.lang === "ar" ? "rtl" : "ltr"}">
-        <h3 class="${l.lang === "ar" ? "ar" : ""}">${l.title}</h3>
-        ${l.teacher ? `<p class="modal-teacher">${l.teacher}</p>` : ""}
+  function cyclePage(sid, cid) {
+    const s = find(DATA.sections, sid);
+    const c = s && find(s.cycles, cid);
+    if (!s || !c) return notFound();
+    const cards = (c.lessons || []).map((l) => `
+      <a class="card" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/lesson/${esc(l.id)}">
+        <h3>${esc(l.title)}</h3>
+      </a>`).join("") || `<p class="empty">Уроки скоро появятся.</p>`;
+    app.innerHTML = `
+      <div class="breadcrumbs">
+        <a href="#/">Разделы</a> / <a href="#/section/${esc(s.id)}">${esc(s.title)}</a> / ${esc(c.title)}
       </div>
-      ${playlistBtn ? `<div class="modal-actions">${playlistBtn}</div>` : ""}
-      ${episodesHtml || (playlistBtn ? "" : `<p class="empty">Ссылки на уроки скоро появятся.</p>`)}
-    `;
-    modal.classList.add("open");
-    document.body.style.overflow = "hidden";
+      <h1 class="page-title">${esc(c.title)}</h1>
+      <p class="page-sub">${esc(c.level || "")}</p>
+      <div class="card-list">${cards}</div>`;
   }
 
-  function closeModal() {
-    modal.classList.remove("open");
-    document.body.style.overflow = "";
+  function lessonPage(sid, cid, lid) {
+    const s = find(DATA.sections, sid);
+    const c = s && find(s.cycles, cid);
+    const l = c && find(c.lessons, lid);
+    if (!s || !c || !l) return notFound();
+
+    const audio = l.audio
+      ? `<audio controls src="${esc(l.audio)}"></audio>`
+      : `<p class="empty">Аудио будет добавлено позже.</p>`;
+
+    const text = l.text
+      ? `<div class="lesson-text">${esc(l.text)}</div>`
+      : `<p class="empty">Текст урока будет добавлен позже.</p>`;
+
+    const tests = (l.tests && l.tests.length)
+      ? renderQuizPlaceholder(l.tests)
+      : `<p class="empty">Тесты будут добавлены позже.</p>`;
+
+    app.innerHTML = `
+      <div class="breadcrumbs">
+        <a href="#/">Разделы</a> / <a href="#/section/${esc(s.id)}">${esc(s.title)}</a> /
+        <a href="#/section/${esc(s.id)}/cycle/${esc(c.id)}">${esc(c.title)}</a> / ${esc(l.title)}
+      </div>
+      <h1 class="page-title">${esc(l.title)}</h1>
+      <div class="lesson-block"><h2>Аудио урока</h2>${audio}</div>
+      <div class="lesson-block"><h2>Текст урока</h2>${text}</div>
+      <div class="lesson-block"><h2>Тесты для проверки знаний</h2><div id="quiz">${tests}</div></div>`;
+
+    if (l.tests && l.tests.length) bindQuiz(l.tests);
   }
 
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal || e.target.closest("[data-close]")) closeModal();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
-  });
+  function renderQuizPlaceholder(tests) {
+    const qs = tests.map((t, i) => {
+      const opts = t.options.map((o, j) => `
+        <label class="quiz-opt" data-q="${i}" data-opt="${j}">
+          <input type="radio" name="q${i}" value="${j}" /> ${esc(o)}
+        </label>`).join("");
+      return `<div class="quiz-q" data-q="${i}">
+        <div class="q-text">${i + 1}. ${esc(t.question)}</div>${opts}</div>`;
+    }).join("");
+    return `${qs}
+      <button class="btn" id="checkQuiz">Проверить</button>
+      <div class="quiz-result" id="quizResult"></div>`;
+  }
 
-  function render() {
-    elContent.innerHTML = "";
-    let totalShown = 0;
-
-    DATA.categories.forEach((cat) => {
-      const lessons = cat.lessons.filter(matches);
-      if (lessons.length === 0) return;
-      totalShown += lessons.length;
-
-      const section = document.createElement("section");
-      section.className = "category";
-      section.id = cat.id;
-
-      const available = lessons.filter(hasContent).length;
-      const countLabel = available
-        ? `${available} / ${lessons.length}`
-        : `${lessons.length}`;
-      const head = document.createElement("div");
-      head.className = "cat-head";
-      head.innerHTML = `
-        <h2>${cat.titleAr}</h2>
-        <span class="ru">${cat.titleRu}</span>
-        <span class="count" title="Доступно ссылок / всего уроков">${countLabel}</span>`;
-      section.appendChild(head);
-
-      const grid = document.createElement("div");
-      grid.className = "grid";
-      lessons.forEach((l) => {
-        const card = document.createElement("article");
-        card.className = "card";
-        card.dataset.lang = l.lang;
-        const teacher = l.teacher ? `<div class="teacher">${l.teacher}</div>` : "";
-        const epCount = Array.isArray(l.episodes) ? l.episodes.length : 0;
-        let action;
-        if (epCount > 0) {
-          action = `<button class="btn open">📚 Уроки: ${epCount}</button>`;
-        } else if (l.url) {
-          const link = linkInfo(l.url);
-          action = `<button class="btn open ${link.type}"><span class="ic">${link.icon}</span>${link.label}</button>`;
-        } else {
-          action = `<span class="badge soon">скоро</span>`;
-        }
-        card.innerHTML = `
-          <div class="title">${l.title}</div>
-          ${teacher}
-          <div class="badges">
-            <span class="badge ${l.lang}">${l.lang === "ar" ? "عربي" : "Рус"}</span>
-            ${action}
-          </div>`;
-        if (hasContent(l)) {
-          card.classList.add("clickable");
-          card.addEventListener("click", () => openModal(l));
-        }
-        grid.appendChild(card);
+  function bindQuiz(tests) {
+    const btn = document.getElementById("checkQuiz");
+    btn.onclick = () => {
+      let correct = 0;
+      tests.forEach((t, i) => {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        document.querySelectorAll(`.quiz-opt[data-q="${i}"]`).forEach((el) => {
+          el.classList.remove("correct", "wrong");
+          const opt = Number(el.dataset.opt);
+          if (opt === t.correct) el.classList.add("correct");
+          else if (sel && Number(sel.value) === opt) el.classList.add("wrong");
+        });
+        if (sel && Number(sel.value) === t.correct) correct++;
       });
-      section.appendChild(grid);
-      elContent.appendChild(section);
-    });
+      document.getElementById("quizResult").textContent =
+        `Правильных ответов: ${correct} из ${tests.length}`;
+    };
+  }
 
-    if (totalShown === 0) {
-      elContent.innerHTML = `<p class="empty">Ничего не найдено по запросу «${query}».</p>`;
+  function libraryPage() {
+    const items = (DATA.library || []).map((b) => {
+      const action = b.url
+        ? `<a class="btn btn-outline" href="${esc(b.url)}" target="_blank" rel="noopener">Открыть</a>`
+        : `<span class="meta">Скоро</span>`;
+      return `<div class="card">
+        <h3>${esc(b.title)}</h3>
+        <p>${esc(b.author || "")}</p>
+        <div class="meta">${esc(b.description || "")}</div>
+        <div style="margin-top:12px">${action}</div>
+      </div>`;
+    }).join("") || `<p class="empty">Книги скоро появятся.</p>`;
+    app.innerHTML = `
+      <h1 class="page-title">Библиотека</h1>
+      <p class="page-sub">Книги в электронном варианте.</p>
+      <div class="card-list">${items}</div>`;
+  }
+
+  /* ---------- Auth pages ---------- */
+  function loginPage() {
+    app.innerHTML = `
+      <div class="auth-card">
+        <h1>Вход</h1>
+        <div class="form-error" id="err" style="display:none"></div>
+        <button class="provider-btn" data-provider="google">Войти через Google</button>
+        <button class="provider-btn" data-provider="apple">Войти через Apple</button>
+        <div class="divider">или</div>
+        <form id="loginForm">
+          <div class="field"><label>Почта</label><input type="email" id="email" required /></div>
+          <div class="field"><label>Пароль</label><input type="password" id="password" required /></div>
+          <button class="btn btn-block" type="submit">Войти</button>
+        </form>
+        <div class="auth-switch">Нет аккаунта? <a href="#/register">Зарегистрироваться</a></div>
+      </div>`;
+    bindProviders();
+    document.getElementById("loginForm").onsubmit = (e) => {
+      e.preventDefault();
+      try {
+        Auth.loginEmail(email.value, password.value);
+        afterAuth();
+      } catch (err) { showErr(err.message); }
+    };
+  }
+
+  function registerPage() {
+    app.innerHTML = `
+      <div class="auth-card">
+        <h1>Регистрация</h1>
+        <div class="form-error" id="err" style="display:none"></div>
+        <button class="provider-btn" data-provider="google">Регистрация через Google</button>
+        <button class="provider-btn" data-provider="apple">Регистрация через Apple</button>
+        <div class="divider">или</div>
+        <form id="regForm">
+          <div class="field"><label>Имя</label><input type="text" id="name" /></div>
+          <div class="field"><label>Почта</label><input type="email" id="email" required /></div>
+          <div class="field"><label>Пароль</label><input type="password" id="password" required /></div>
+          <button class="btn btn-block" type="submit">Создать аккаунт</button>
+        </form>
+        <div class="auth-switch">Уже есть аккаунт? <a href="#/login">Войти</a></div>
+      </div>`;
+    bindProviders();
+    document.getElementById("regForm").onsubmit = (e) => {
+      e.preventDefault();
+      try {
+        Auth.registerEmail(name.value, email.value, password.value);
+        afterAuth();
+      } catch (err) { showErr(err.message); }
+    };
+  }
+
+  function bindProviders() {
+    document.querySelectorAll(".provider-btn").forEach((b) => {
+      b.onclick = () => {
+        const s = Auth.loginProvider(b.dataset.provider);
+        if (s) afterAuth();
+      };
+    });
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById("err");
+    el.textContent = msg;
+    el.style.display = "block";
+  }
+
+  function afterAuth() {
+    renderAuthBox();
+    location.hash = "#/";
+  }
+
+  function notFound() {
+    app.innerHTML = `<h1 class="page-title">Страница не найдена</h1>
+      <p class="page-sub"><a href="#/">Вернуться на главную</a></p>`;
+  }
+
+  /* ---------- Router ---------- */
+  function router() {
+    const parts = (location.hash.replace(/^#\/?/, "")).split("/").filter(Boolean);
+    window.scrollTo(0, 0);
+    if (parts.length === 0) return homePage();
+    if (parts[0] === "library") return libraryPage();
+    if (parts[0] === "login") return loginPage();
+    if (parts[0] === "register") return registerPage();
+    if (parts[0] === "section") {
+      if (parts.length === 2) return sectionPage(parts[1]);
+      if (parts[2] === "cycle" && parts.length === 4) return cyclePage(parts[1], parts[3]);
+      if (parts[2] === "cycle" && parts[4] === "lesson" && parts.length === 6)
+        return lessonPage(parts[1], parts[3], parts[5]);
     }
-
-    const total = DATA.categories.reduce((n, c) => n + c.lessons.length, 0);
-    const withLinks = DATA.categories.reduce(
-      (n, c) => n + c.lessons.filter(hasContent).length, 0);
-    elStats.textContent =
-      `Показано ${totalShown} из ${total} уроков · ${DATA.categories.length} разделов · со ссылками: ${withLinks}`;
+    return notFound();
   }
 
-  function buildNav() {
-    elNav.innerHTML = "";
-    DATA.categories.forEach((cat) => {
-      const a = document.createElement("a");
-      a.href = `#${cat.id}`;
-      a.textContent = cat.titleAr;
-      a.title = cat.titleRu;
-      elNav.appendChild(a);
-    });
-  }
-
-  elSearch.addEventListener("input", (e) => {
-    query = e.target.value;
-    render();
-  });
-
-  document.querySelectorAll(".lang-filter button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".lang-filter button").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeLang = btn.dataset.lang;
-      render();
-    });
-  });
-
-  fetch("data.json?v=" + Date.now(), { cache: "no-store" })
+  /* ---------- Init ---------- */
+  fetch("data.json")
     .then((r) => r.json())
-    .then((data) => {
-      DATA = data;
-      buildNav();
-      render();
+    .then((d) => {
+      DATA = d;
+      renderAuthBox();
+      router();
     })
-    .catch((err) => {
-      elContent.innerHTML = `<p class="empty">Не удалось загрузить данные: ${err.message}</p>`;
+    .catch(() => {
+      app.innerHTML = `<p class="empty">Не удалось загрузить данные. Запустите сайт через локальный сервер.</p>`;
     });
+
+  window.addEventListener("hashchange", router);
 })();

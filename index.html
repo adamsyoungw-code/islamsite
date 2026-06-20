@@ -1,53 +1,33 @@
 <!DOCTYPE html>
-<html lang="ru" dir="rtl">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Исламские знания — Уроки по исламским наукам</title>
-  <meta name="description" content="Исламские знания — собрание уроков по исламским наукам: тафсир, хадис, фикх, акыда, арабский язык и др." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>Исламские знания</title>
+  <meta name="description" content="Исламские знания — уроки по исламским наукам: акыда, фикх, тафсир, хадис, адаб. Аудио, тексты уроков, тесты и библиотека." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <div class="brand">
-        <span class="brand-ar">العلوم الإسلامية</span>
-        <span class="brand-ru">Исламские знания</span>
-      </div>
-      <div class="controls">
-        <input id="search" type="search" placeholder="Поиск по урокам, книгам, преподавателям…" autocomplete="off" />
-        <div class="lang-filter" role="group" aria-label="Язык уроков">
-          <button data-lang="all" class="active">Все</button>
-          <button data-lang="ar">عربي</button>
-          <button data-lang="ru">Рус</button>
-        </div>
-      </div>
+      <a class="brand" href="#/">Исламские знания</a>
+      <nav class="main-nav" id="mainNav">
+        <a href="#/">Разделы</a>
+        <a href="#/library">Библиотека</a>
+      </nav>
+      <div class="auth-box" id="authBox"></div>
     </div>
   </header>
 
-  <nav class="cat-nav">
-    <div class="container" id="catNav"></div>
-  </nav>
-
-  <main class="container" id="content"></main>
+  <main class="container" id="app"></main>
 
   <footer class="site-footer">
     <div class="container">
-      <p id="stats"></p>
-      <p class="muted">Ссылки на уроки будут добавлены позже.</p>
+      <p class="muted">© Исламские знания</p>
     </div>
   </footer>
 
-  <div class="modal" id="modal" aria-hidden="true">
-    <div class="modal-card" role="dialog" aria-modal="true">
-      <button class="modal-close" data-close aria-label="Закрыть">×</button>
-      <div id="modalBody"></div>
-    </div>
-  </div>
-
+  <script src="auth.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
