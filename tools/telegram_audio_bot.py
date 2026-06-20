@@ -95,6 +95,56 @@ def guess_extension(file_name, audio_attr) -> str:
     return ".mp3"
 
 
+def parse_proxy(value):
+    """Разбирает строку прокси из TG_PROXY / --proxy.
+
+    Поддерживаются форматы:
+        socks5://[user:pass@]host:port
+        socks4://host:port
+        http://[user:pass@]host:port
+        mtproxy://host:port:secret     (MTProto-прокси Telegram)
+
+    Возвращает (proxy, connection_cls) для TelegramClient или (None, None).
+    """
+    if not value:
+        return None, None
+    value = value.strip()
+
+    if value.startswith("mtproxy://"):
+        rest = value[len("mtproxy://"):]
+        try:
+            host, port, secret = rest.split(":")
+        except ValueError:
+            sys.exit("Неверный формат mtproxy. Нужно: mtproxy://host:port:secret")
+        from telethon.network import ConnectionTcpMTProxyRandomizedIntermediate
+        return (host, int(port), secret), ConnectionTcpMTProxyRandomizedIntermediate
+
+    m = re.match(r"^(socks5|socks4|http)://(?:([^:@]+):([^@]+)@)?([^:]+):(\d+)$", value)
+    if not m:
+        sys.exit(
+            "Неверный формат прокси. Примеры:\n"
+            "  socks5://host:port\n"
+            "  socks5://user:pass@host:port\n"
+            "  mtproxy://host:port:secret"
+        )
+    scheme, user, password, host, port = m.groups()
+    try:
+        import python_socks  # noqa: F401
+    except ImportError:
+        sys.exit(
+            "Для SOCKS/HTTP-прокси нужна библиотека python-socks:\n"
+            "  pip install python-socks[asyncio]"
+        )
+    from python_socks import ProxyType
+    ptype = {"socks5": ProxyType.SOCKS5, "socks4": ProxyType.SOCKS4,
+             "http": ProxyType.HTTP}[scheme]
+    proxy = {"proxy_type": ptype, "addr": host, "port": int(port)}
+    if user:
+        proxy["username"] = user
+        proxy["password"] = password
+    return proxy, None
+
+
 def load_manifest(path: Path):
     if path.exists():
         try:
@@ -122,7 +172,15 @@ async def run(args):
     done_ids = {(item.get("chat_id"), item["message_id"]) for item in manifest}
     used_names = {item["file"] for item in manifest}
 
-    client = TelegramClient("tg_audio_bot_session", int(api_id), api_hash)
+    proxy, connection_cls = parse_proxy(args.proxy or os.environ.get("TG_PROXY"))
+    client_kwargs = {}
+    if proxy is not None:
+        client_kwargs["proxy"] = proxy
+        print("Подключение через прокси.")
+    if connection_cls is not None:
+        client_kwargs["connection"] = connection_cls
+
+    client = TelegramClient("tg_audio_bot_session", int(api_id), api_hash, **client_kwargs)
     await client.start(bot_token=bot_token)
 
     me = await client.get_me()
@@ -196,6 +254,11 @@ def parse_args():
     )
     p.add_argument("--out", default="audio", help="папка для сохранения (по умолчанию ./audio)")
     p.add_argument("--bot-token", dest="bot_token", help="токен бота (или TG_BOT_TOKEN)")
+    p.add_argument(
+        "--proxy",
+        help="прокси (или TG_PROXY): socks5://host:port, socks5://user:pass@host:port, "
+        "http://host:port, mtproxy://host:port:secret",
+    )
     return p.parse_args()
 
 
