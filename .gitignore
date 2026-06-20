@@ -1,0 +1,7 @@
+# Telegram-сессии агента (доступ к аккаунту — не коммитить)
+*.session
+*.session-journal
+
+# Python
+__pycache__/
+*.pyc
