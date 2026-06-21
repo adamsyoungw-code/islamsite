@@ -35,6 +35,17 @@
 
   <main id="app"></main>
 
+  <div id="player" class="player" hidden>
+    <div class="container player-inner">
+      <div class="player-meta">
+        <span class="player-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="player-title" id="playerTitle"></span>
+      </div>
+      <audio id="playerAudio" class="player-audio" controls preload="none"></audio>
+      <button id="playerClose" class="player-close" aria-label="Закрыть плеер">×</button>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="container">
       <p class="muted">© Исламские знания</p>
