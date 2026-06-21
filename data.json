@@ -12,34 +12,101 @@
           "lessons": [
             {
               "id": "akyda-1-1",
-              "title": "Урок 1. Что такое акыда",
-              "audio": "",
-              "text": "Акыда — это раздел исламских знаний, изучающий основы вероубеждения. В этом уроке мы знакомимся с предметом, его важностью и местом среди других наук.\n\nДобавьте сюда текст урока.",
-              "tests": [
-                {
-                  "question": "Что изучает наука «акыда»?",
-                  "options": ["Правила чтения Корана", "Основы вероубеждения", "Правила торговли"],
-                  "correct": 1
-                },
-                {
-                  "question": "К какой категории знаний относится акыда?",
-                  "options": ["Второстепенным", "Основополагающим", "Необязательным"],
-                  "correct": 1
-                }
-              ]
+              "title": "Урок 1. Вера в Аллаха, часть 1",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-1.mp3",
+              "text": "",
+              "tests": []
             },
             {
               "id": "akyda-1-2",
-              "title": "Урок 2. Столпы веры",
-              "audio": "",
-              "text": "В этом уроке рассматриваются шесть столпов веры (имана).\n\nДобавьте сюда текст урока.",
-              "tests": [
-                {
-                  "question": "Сколько столпов веры в исламе?",
-                  "options": ["Пять", "Шесть", "Семь"],
-                  "correct": 1
-                }
-              ]
+              "title": "Урок 2. Вера в Аллаха, часть 2",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-2.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-3",
+              "title": "Урок 3. Вера в Аллаха, часть 3. Об атрибутах с неясным смыслом",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-3.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-4",
+              "title": "Урок 4. Вера в Аллаха, часть 4. Об атрибутах с неясным смыслом",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-4.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-5",
+              "title": "Урок 5. Вера в ангелов. Вера в книги",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-5.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-6",
+              "title": "Урок 6. Вера в пророков, часть 1",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-6.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-7",
+              "title": "Урок 7. Вера в пророков, часть 2",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-7.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-8",
+              "title": "Урок 8. Вера в пророков, часть 3",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-8.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-9",
+              "title": "Урок 9. Вера в Судный день, часть 1",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-9.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-10",
+              "title": "Урок 10. Вера в Судный день, часть 2",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-10.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-11",
+              "title": "Урок 11. Вера в предопределение",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-11.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-12",
+              "title": "Урок 12. Важные вопросы акыды, часть 1",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-12.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-13",
+              "title": "Урок 13. Важные вопросы акыды, часть 2",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-13.mp3",
+              "text": "",
+              "tests": []
+            },
+            {
+              "id": "akyda-1-14",
+              "title": "Урок 14. Важные вопросы акыды, часть 3",
+              "audio": "https://github.com/adamsyoungw-code/islamsite/releases/download/audio/akyda-1-14.mp3",
+              "text": "",
+              "tests": []
             }
           ]
         },
