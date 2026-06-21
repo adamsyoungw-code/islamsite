@@ -288,7 +288,7 @@
   };
 
   /* ---------- Init ---------- */
-  fetch("data.json")
+  fetch("data.json?v=" + Date.now(), { cache: "no-store" })
     .then((r) => r.json())
     .then((d) => { DATA = d; renderAuthBox(); router(); })
     .catch(() => {
