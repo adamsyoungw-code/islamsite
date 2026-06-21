@@ -155,7 +155,7 @@
 
     const text = l.text
       ? `<div class="lesson-text">${esc(l.text)}</div>`
-      : emptyState("Текст урока будет добавлен позже.");
+      : emptyState("Текст к уроку будет добавлен позже.");
 
     const tests = (l.tests && l.tests.length)
       ? renderQuiz(l.tests)
@@ -174,7 +174,7 @@
            <div class="block-head"><span class="ic">${icon.audio}</span>Аудио урока</div>${audio}
          </div>
          <div class="lesson-block">
-           <div class="block-head"><span class="ic">${icon.text}</span>Текст урока</div>${text}
+           <div class="block-head"><span class="ic">${icon.text}</span>Текст к уроку</div>${text}
          </div>
          <div class="lesson-block">
            <div class="block-head"><span class="ic">${icon.quiz}</span>Тесты для проверки знаний</div>
