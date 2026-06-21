@@ -17,6 +17,48 @@
     clock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
   };
 
+  /* ---------- Постоянный плеер (живёт вне #app, не прерывается при навигации) ---------- */
+  const Player = {
+    el: document.getElementById("player"),
+    audio: document.getElementById("playerAudio"),
+    titleEl: document.getElementById("playerTitle"),
+    key: "",
+    init() {
+      document.getElementById("playerClose").onclick = () => this.close();
+      this.audio.addEventListener("play", () => this.el.classList.remove("paused"));
+      this.audio.addEventListener("pause", () => this.el.classList.add("paused"));
+      this.audio.addEventListener("ended", () => this.el.classList.add("paused"));
+    },
+    play(key, src, title) {
+      if (this.key !== key) {           // новый трек — грузим
+        this.key = key;
+        this.audio.src = src;
+        this.titleEl.textContent = title;
+      }
+      this.el.hidden = false;
+      document.body.classList.add("has-player");
+      this.audio.play().catch(() => {});
+      refreshNowPlaying();
+    },
+    close() {
+      this.audio.pause();
+      this.el.hidden = true;
+      this.key = "";
+      document.body.classList.remove("has-player");
+      refreshNowPlaying();
+    },
+    isCurrent(key) { return this.key === key && !this.audio.paused; },
+  };
+  Player.init();
+
+  // Подсветка «сейчас играет» на странице урока, если плеер крутит этот урок
+  function refreshNowPlaying() {
+    document.querySelectorAll("[data-play-key]").forEach((btn) => {
+      const np = btn.parentElement.querySelector(".now-playing");
+      if (np) np.style.display = Player.isCurrent(btn.dataset.playKey) ? "inline-flex" : "none";
+    });
+  }
+
   const emptyState = (text) =>
     `<div class="empty-state"><span class="ic">${icon.clock}</span><span>${esc(text)}</span></div>`;
 
@@ -104,7 +146,11 @@
     if (!s || !c || !l) return notFound();
 
     const audio = l.audio
-      ? `<div class="audio-card"><audio controls preload="none" src="${esc(l.audio)}"></audio></div>`
+      ? `<button class="btn btn-primary play-lesson" data-play-key="${esc(l.id)}"
+             data-src="${esc(l.audio)}" data-title="${esc(l.title)}">
+           <span class="pic">${icon.audio}</span> Слушать урок
+         </button>
+         <div class="now-playing" style="display:none">${icon.audio} Идёт воспроизведение — плеер внизу продолжит играть при переходах</div>`
       : emptyState("Аудио будет добавлено позже.");
 
     const text = l.text
@@ -124,7 +170,7 @@
       ]) +
       page(
         head(l.title) +
-        `<div class="lesson-block audio-block">
+        `<div class="lesson-block">
            <div class="block-head"><span class="ic">${icon.audio}</span>Аудио урока</div>${audio}
          </div>
          <div class="lesson-block">
@@ -137,6 +183,13 @@
       );
 
     if (l.tests && l.tests.length) bindQuiz(l.tests);
+
+    const playBtn = app.querySelector(".play-lesson");
+    if (playBtn) {
+      playBtn.onclick = () =>
+        Player.play(playBtn.dataset.playKey, playBtn.dataset.src, playBtn.dataset.title);
+    }
+    refreshNowPlaying();
   }
 
   function renderQuiz(tests) {
