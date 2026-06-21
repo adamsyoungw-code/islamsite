@@ -1,1 +1,5 @@
 telethon>=1.36,<2
+
+# Контент-пайплайн (content_pipeline.py)
+faster-whisper>=1.0      # стадия transcribe (локально, без API)
+anthropic>=0.40          # стадии lesson и tests (Claude API)

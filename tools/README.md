@@ -1,3 +1,41 @@
+# Агент: контент-пайплайн уроков
+
+`content_pipeline.py` превращает аудиоуроки в готовый учебный материал и
+пишет результат прямо в `data.json`. Три стадии:
+
+1. **transcribe** — `audio/<id>.mp3` → черновая транскрипция (локально,
+   через faster-whisper, без обращения к API). Сырой текст сохраняется в
+   `tools/transcripts/<id>.txt`.
+2. **lesson** — транскрипция → структурированный конспект (Claude API),
+   пишется в поле `text` урока.
+3. **tests** — текст урока → вопросы в формате сайта (`{question,
+   options, correct}`), пишутся в поле `tests`.
+
+```bash
+pip install -r tools/requirements.txt
+export ANTHROPIC_API_KEY=...        # для стадий lesson и tests
+
+# весь цикл целиком, все три стадии
+python tools/content_pipeline.py all --section akyda --cycle akyda-1
+
+# одна стадия, один урок
+python tools/content_pipeline.py transcribe --lesson akyda-1-1
+
+# перегенерировать только тесты
+python tools/content_pipeline.py tests --section akyda --force
+```
+
+Фильтры `--section` / `--cycle` / `--lesson` сужают набор уроков. По
+умолчанию заполненные поля не перезаписываются — добавьте `--force`.
+
+> **Важно про богословский контент.** Конспекты и тесты, сгенерированные
+> моделью, — это **черновик**. Каждый такой урок помечается в `data.json`
+> флагом `"draft": true`. Перед публикацией материал должен вычитать
+> человек, разбирающийся в теме; после проверки флаг `draft` снимается
+> вручную.
+
+---
+
 # Агент: скачивание аудио из Telegram-канала
 
 `telegram_audio_downloader.py` подключается к Telegram через ваш аккаунт
