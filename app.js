@@ -164,15 +164,22 @@
       ? `<div class="lesson-text">${esc(l.text)}</div>`
       : emptyState("Текст к уроку будет добавлен позже.");
 
-    // Тест к уроку — гугл-форма. Встраиваем только публичные /viewform-ссылки;
-    // ссылки на редактор (/edit) посетителям недоступны, поэтому блок не
-    // показываем, пока не появится публичная ссылка.
+    // Тест к уроку. Приоритет — встроенный тест на сайте (l.tests); иначе
+    // встраиваем публичную гугл-форму (/viewform). Ссылки на редактор (/edit)
+    // посетителям недоступны, поэтому такой блок не показываем.
     const isPublicForm = l.testUrl && l.testUrl.includes("/viewform");
-    const testBlock = isPublicForm
+    let testInner = "";
+    if (l.tests && l.tests.length) {
+      testInner = `<div id="quiz">${renderQuiz(l.tests)}</div>`;
+    } else if (isPublicForm) {
+      testInner =
+        `<iframe class="test-frame" src="${esc(l.testUrl)}${l.testUrl.includes("?") ? "&" : "?"}embedded=true" loading="lazy" title="Тест к уроку">Загрузка теста…</iframe>
+         <a class="btn test-open" href="${esc(l.testUrl)}" target="_blank" rel="noopener">Открыть тест в новой вкладке ↗</a>`;
+    }
+    const testBlock = testInner
       ? `<div class="lesson-block">
            <div class="block-head"><span class="ic">${icon.quiz}</span>Тест к уроку</div>
-           <iframe class="test-frame" src="${esc(l.testUrl)}${l.testUrl.includes("?") ? "&" : "?"}embedded=true" loading="lazy" title="Тест к уроку">Загрузка теста…</iframe>
-           <a class="btn test-open" href="${esc(l.testUrl)}" target="_blank" rel="noopener">Открыть тест в новой вкладке ↗</a>
+           ${testInner}
          </div>`
       : "";
 
@@ -203,12 +210,49 @@
          ${questionsBlock}`
       );
 
+    if (l.tests && l.tests.length) bindQuiz(l.tests);
+
     const playBtn = app.querySelector(".play-lesson");
     if (playBtn) {
       playBtn.onclick = () =>
         Player.play(playBtn.dataset.playKey, playBtn.dataset.src, playBtn.dataset.title);
     }
     refreshNowPlaying();
+  }
+
+  function renderQuiz(tests) {
+    const qs = tests.map((t, i) => {
+      const opts = t.options.map((o, j) => `
+        <label class="quiz-opt" data-q="${i}" data-opt="${j}">
+          <input type="radio" name="q${i}" value="${j}" /> <span>${esc(o)}</span>
+        </label>`).join("");
+      return `<div class="quiz-q" data-q="${i}">
+        <div class="q-text">${i + 1}. ${esc(t.question)}</div>${opts}</div>`;
+    }).join("");
+    return `${qs}
+      <button class="btn btn-primary" id="checkQuiz">Проверить</button>
+      <div class="quiz-result" id="quizResult"></div>`;
+  }
+
+  function bindQuiz(tests) {
+    const btn = document.getElementById("checkQuiz");
+    if (!btn) return;
+    btn.onclick = () => {
+      let correct = 0;
+      tests.forEach((t, i) => {
+        const sel = document.querySelector(`input[name="q${i}"]:checked`);
+        document.querySelectorAll(`.quiz-opt[data-q="${i}"]`).forEach((el) => {
+          el.classList.remove("correct", "wrong");
+          const opt = Number(el.dataset.opt);
+          if (opt === t.correct) el.classList.add("correct");
+          else if (sel && Number(sel.value) === opt) el.classList.add("wrong");
+        });
+        if (sel && Number(sel.value) === t.correct) correct++;
+      });
+      const res = document.getElementById("quizResult");
+      res.textContent = `Правильных ответов: ${correct} из ${tests.length}`;
+      res.classList.add("show");
+    };
   }
 
   function libraryPage() {

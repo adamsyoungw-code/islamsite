@@ -284,6 +284,34 @@ a.card:hover {
 .lesson-questions li { margin-bottom: 12px; }
 .final-test { margin-top: 28px; }
 
+.quiz-q { margin-bottom: 22px; }
+.quiz-q .q-text { font-weight: 600; margin-bottom: 12px; }
+.quiz-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  margin-bottom: 9px;
+  cursor: pointer;
+  background: var(--surface);
+  transition: border-color .12s;
+}
+.quiz-opt:hover { border-color: var(--gold); }
+.quiz-opt.correct { border-color: #2e7d4f; background: #eef7f1; }
+.quiz-opt.wrong { border-color: #c0584a; background: #fbeeeb; }
+.quiz-result {
+  font-weight: 600;
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(31,71,51,0.07);
+  color: var(--accent);
+  display: none;
+}
+.quiz-result.show { display: block; }
+
 /* ---------- Auth ---------- */
 .auth-card {
   max-width: 410px;

@@ -47,6 +47,30 @@ def check_questions(questions, where):
             err(f"{where}: вопрос #{i} должен быть непустой строкой")
 
 
+def check_tests(tests, where):
+    if not tests:
+        return
+    if not isinstance(tests, list):
+        err(f"{where}: поле tests должно быть массивом")
+        return
+    for i, t in enumerate(tests):
+        w = f"{where}: тест #{i}"
+        if not isinstance(t, dict):
+            err(f"{w}: должен быть объектом")
+            continue
+        if not isinstance(t.get("question"), str) or not t["question"].strip():
+            err(f"{w}: question должен быть непустой строкой")
+        opts = t.get("options")
+        if not isinstance(opts, list) or len(opts) < 2:
+            err(f"{w}: options должен быть списком из 2+ вариантов")
+            continue
+        if not all(isinstance(o, str) and o.strip() for o in opts):
+            err(f"{w}: все варианты должны быть непустыми строками")
+        c = t.get("correct")
+        if not isinstance(c, int) or isinstance(c, bool) or not (0 <= c < len(opts)):
+            err(f"{w}: correct должен быть индексом внутри options (0..{len(opts) - 1})")
+
+
 def check_test_url(url, where):
     if url is None:
         return
@@ -108,6 +132,7 @@ def main():
                     err(f"{l_where}: нет заголовка")
                 check_audio(les.get("audio", ""), l_where)
                 check_questions(les.get("questions", []), l_where)
+                check_tests(les.get("tests"), l_where)
                 check_test_url(les.get("testUrl"), l_where)
                 if not les.get("text"):
                     warn(f"{l_where}: пустой текст урока")
