@@ -15,6 +15,7 @@
     text: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h6v18H5a2 2 0 0 1-2-2z"/><path d="M21 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg>`,
     quiz: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
     clock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+    list: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`,
   };
 
   /* ---------- Постоянный плеер (живёт вне #app, не прерывается при навигации) ---------- */
@@ -130,13 +131,19 @@
       <a class="card" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/lesson/${esc(l.id)}">
         <h3>${esc(l.title)}</h3>
       </a>`).join("") || emptyState("Уроки скоро появятся.");
+    const finalTest = (c.finalTestUrl && c.finalTestUrl.includes("/viewform"))
+      ? `<div class="lesson-block final-test">
+           <div class="block-head"><span class="ic">${icon.quiz}</span>Итоговый тест цикла</div>
+           <a class="btn btn-primary test-open" href="${esc(c.finalTestUrl)}" target="_blank" rel="noopener">Пройти итоговый тест ↗</a>
+         </div>`
+      : "";
     app.innerHTML =
       crumbs([
         { label: "Разделы", href: "#/" },
         { label: s.title, href: `#/section/${s.id}` },
         { label: c.title },
       ]) +
-      page(head(c.title, c.level || "") + `<div class="card-list">${cards}</div>`);
+      page(head(c.title, c.level || "") + `<div class="card-list">${cards}</div>` + finalTest);
   }
 
   function lessonPage(sid, cid, lid) {
@@ -157,9 +164,25 @@
       ? `<div class="lesson-text">${esc(l.text)}</div>`
       : emptyState("Текст к уроку будет добавлен позже.");
 
-    const tests = (l.tests && l.tests.length)
-      ? renderQuiz(l.tests)
-      : emptyState("Тесты будут добавлены позже.");
+    // Тест к уроку — гугл-форма. Встраиваем только публичные /viewform-ссылки;
+    // ссылки на редактор (/edit) посетителям недоступны, поэтому блок не
+    // показываем, пока не появится публичная ссылка.
+    const isPublicForm = l.testUrl && l.testUrl.includes("/viewform");
+    const testBlock = isPublicForm
+      ? `<div class="lesson-block">
+           <div class="block-head"><span class="ic">${icon.quiz}</span>Тест к уроку</div>
+           <iframe class="test-frame" src="${esc(l.testUrl)}${l.testUrl.includes("?") ? "&" : "?"}embedded=true" loading="lazy" title="Тест к уроку">Загрузка теста…</iframe>
+           <a class="btn test-open" href="${esc(l.testUrl)}" target="_blank" rel="noopener">Открыть тест в новой вкладке ↗</a>
+         </div>`
+      : "";
+
+    // Вопросы к уроку — открытые, без вариантов ответа.
+    const questionsBlock = (l.questions && l.questions.length)
+      ? `<div class="lesson-block">
+           <div class="block-head"><span class="ic">${icon.list}</span>Вопросы к уроку</div>
+           <ol class="lesson-questions">${l.questions.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>
+         </div>`
+      : "";
 
     app.innerHTML =
       crumbs([
@@ -176,13 +199,9 @@
          <div class="lesson-block">
            <div class="block-head"><span class="ic">${icon.text}</span>Текст к уроку</div>${text}
          </div>
-         <div class="lesson-block">
-           <div class="block-head"><span class="ic">${icon.quiz}</span>Тесты для проверки знаний</div>
-           <div id="quiz">${tests}</div>
-         </div>`
+         ${testBlock}
+         ${questionsBlock}`
       );
-
-    if (l.tests && l.tests.length) bindQuiz(l.tests);
 
     const playBtn = app.querySelector(".play-lesson");
     if (playBtn) {
@@ -190,39 +209,6 @@
         Player.play(playBtn.dataset.playKey, playBtn.dataset.src, playBtn.dataset.title);
     }
     refreshNowPlaying();
-  }
-
-  function renderQuiz(tests) {
-    const qs = tests.map((t, i) => {
-      const opts = t.options.map((o, j) => `
-        <label class="quiz-opt" data-q="${i}" data-opt="${j}">
-          <input type="radio" name="q${i}" value="${j}" /> <span>${esc(o)}</span>
-        </label>`).join("");
-      return `<div class="quiz-q" data-q="${i}">
-        <div class="q-text">${i + 1}. ${esc(t.question)}</div>${opts}</div>`;
-    }).join("");
-    return `${qs}
-      <button class="btn btn-primary" id="checkQuiz">Проверить</button>
-      <div class="quiz-result" id="quizResult"></div>`;
-  }
-
-  function bindQuiz(tests) {
-    document.getElementById("checkQuiz").onclick = () => {
-      let correct = 0;
-      tests.forEach((t, i) => {
-        const sel = document.querySelector(`input[name="q${i}"]:checked`);
-        document.querySelectorAll(`.quiz-opt[data-q="${i}"]`).forEach((el) => {
-          el.classList.remove("correct", "wrong");
-          const opt = Number(el.dataset.opt);
-          if (opt === t.correct) el.classList.add("correct");
-          else if (sel && Number(sel.value) === opt) el.classList.add("wrong");
-        });
-        if (sel && Number(sel.value) === t.correct) correct++;
-      });
-      const res = document.getElementById("quizResult");
-      res.textContent = `Правильных ответов: ${correct} из ${tests.length}`;
-      res.classList.add("show");
-    };
   }
 
   function libraryPage() {

@@ -38,27 +38,23 @@ def warn(msg):
     warnings.append(msg)
 
 
-def check_tests(tests, where):
-    if not isinstance(tests, list):
-        err(f"{where}: поле tests должно быть массивом")
+def check_questions(questions, where):
+    if not isinstance(questions, list):
+        err(f"{where}: поле questions должно быть массивом")
         return
-    for i, t in enumerate(tests):
-        w = f"{where}: тест #{i}"
-        if not isinstance(t, dict):
-            err(f"{w}: должен быть объектом")
-            continue
-        q = t.get("question")
+    for i, q in enumerate(questions):
         if not isinstance(q, str) or not q.strip():
-            err(f"{w}: question должен быть непустой строкой")
-        opts = t.get("options")
-        if not isinstance(opts, list) or len(opts) < 2:
-            err(f"{w}: options должен быть списком из 2+ вариантов")
-            continue
-        if not all(isinstance(o, str) and o.strip() for o in opts):
-            err(f"{w}: все варианты в options должны быть непустыми строками")
-        c = t.get("correct")
-        if not isinstance(c, int) or isinstance(c, bool) or not (0 <= c < len(opts)):
-            err(f"{w}: correct должен быть индексом внутри options (0..{len(opts) - 1})")
+            err(f"{where}: вопрос #{i} должен быть непустой строкой")
+
+
+def check_test_url(url, where):
+    if url is None:
+        return
+    if not isinstance(url, str) or not url.startswith("https://"):
+        err(f"{where}: testUrl должен быть https-ссылкой")
+        return
+    if "/viewform" not in url:
+        warn(f"{where}: ссылка на тест не публичная (нужна /viewform, а не /edit) — {url}")
 
 
 def check_audio(audio, where):
@@ -111,9 +107,11 @@ def main():
                 if not les.get("title"):
                     err(f"{l_where}: нет заголовка")
                 check_audio(les.get("audio", ""), l_where)
-                check_tests(les.get("tests", []), l_where)
+                check_questions(les.get("questions", []), l_where)
+                check_test_url(les.get("testUrl"), l_where)
                 if not les.get("text"):
                     warn(f"{l_where}: пустой текст урока")
+            check_test_url(cyc.get("finalTestUrl"), c_where)
 
     for b_i, book in enumerate(data.get("library", [])):
         b_where = f"библиотека / книга #{b_i} ({book.get('title', '?')})"
