@@ -5,21 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Исламские знания</title>
   <meta name="description" content="Исламские знания — уроки по исламским наукам: акыда, фикх, тафсир, хадис, адаб. Аудио, тексты уроков, тесты и библиотека." />
+  <meta name="theme-color" content="#1f4733" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="#/">Исламские знания</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Меню" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <a class="brand" href="#/">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M12 2l2.6 2.6 3.7-.4-.4 3.7L20.5 12l-2.6 2.6.4 3.7-3.7-.4L12 20.5 9.4 17.9l-3.7.4.4-3.7L3.5 12l2.6-2.6-.4-3.7 3.7.4z"/>
+          </svg>
+        </span>
+        <span class="brand-name">Исламские знания</span>
+      </a>
       <nav class="main-nav" id="mainNav">
-        <a href="#/">Разделы</a>
-        <a href="#/library">Библиотека</a>
+        <a href="#/" data-nav>Разделы</a>
+        <a href="#/library" data-nav>Библиотека</a>
+        <div class="auth-box" id="authBox"></div>
       </nav>
-      <div class="auth-box" id="authBox"></div>
     </div>
   </header>
 
-  <main class="container" id="app"></main>
+  <main id="app"></main>
 
   <footer class="site-footer">
     <div class="container">
