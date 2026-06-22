@@ -15,6 +15,7 @@
     text: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h6v18H5a2 2 0 0 1-2-2z"/><path d="M21 5a2 2 0 0 0-2-2h-6v18h6a2 2 0 0 0 2-2z"/></svg>`,
     quiz: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
     clock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+    list: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`,
   };
 
   /* ---------- Постоянный плеер (живёт вне #app, не прерывается при навигации) ---------- */
@@ -130,13 +131,68 @@
       <a class="card" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/lesson/${esc(l.id)}">
         <h3>${esc(l.title)}</h3>
       </a>`).join("") || emptyState("Уроки скоро появятся.");
+    const n = (c.lessons || []).length;
+    const finalCard = (c.finalTest && c.finalTest.questions && c.finalTest.questions.length)
+      ? `<a class="card card-final" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/test">
+           <h3>${n + 1}. Итоговый тест</h3>
+           <p>${c.finalTest.questions.length} вопросов · ${c.finalTest.timeLimitMin} минут</p>
+         </a>`
+      : "";
     app.innerHTML =
       crumbs([
         { label: "Разделы", href: "#/" },
         { label: s.title, href: `#/section/${s.id}` },
         { label: c.title },
       ]) +
-      page(head(c.title, c.level || "") + `<div class="card-list">${cards}</div>`);
+      page(head(c.title, c.level || "") + `<div class="card-list">${cards}${finalCard}</div>`);
+  }
+
+  function finalTestPage(sid, cid) {
+    const s = find(DATA.sections, sid);
+    const c = s && find(s.cycles, cid);
+    const ft = c && c.finalTest;
+    if (!s || !c || !ft || !ft.questions || !ft.questions.length) return notFound();
+
+    app.innerHTML =
+      crumbs([
+        { label: "Разделы", href: "#/" },
+        { label: s.title, href: `#/section/${s.id}` },
+        { label: c.title, href: `#/section/${s.id}/cycle/${c.id}` },
+        { label: "Итоговый тест" },
+      ]) +
+      page(
+        head("Итоговый тест", `${ft.questions.length} вопросов · на выполнение ${ft.timeLimitMin} минут`) +
+        `<div class="final-timer" id="finalTimer"></div>
+         <div id="quiz">${renderQuiz(ft.questions)}</div>`
+      );
+
+    bindQuiz(ft.questions);
+    startTimer(ft.timeLimitMin * 60);
+  }
+
+  // Таймер итогового теста: по истечении времени автоматически проверяет ответы.
+  function startTimer(totalSec) {
+    const el = document.getElementById("finalTimer");
+    if (!el) return;
+    let left = totalSec;
+    const tick = () => {
+      const m = String(Math.floor(left / 60)).padStart(2, "0");
+      const sec = String(left % 60).padStart(2, "0");
+      el.textContent = `Осталось времени: ${m}:${sec}`;
+      el.classList.toggle("urgent", left <= 60);
+      if (left <= 0) {
+        clearInterval(timerId);
+        el.textContent = "Время вышло";
+        const btn = document.getElementById("checkQuiz");
+        if (btn) btn.click();
+        return;
+      }
+      left--;
+    };
+    tick();
+    const timerId = setInterval(tick, 1000);
+    // остановить таймер при уходе со страницы
+    window.addEventListener("hashchange", () => clearInterval(timerId), { once: true });
   }
 
   function lessonPage(sid, cid, lid) {
@@ -155,11 +211,23 @@
 
     const text = l.text
       ? `<div class="lesson-text">${esc(l.text)}</div>`
-      : emptyState("Текст урока будет добавлен позже.");
+      : emptyState("Текст к уроку будет добавлен позже.");
 
-    const tests = (l.tests && l.tests.length)
-      ? renderQuiz(l.tests)
-      : emptyState("Тесты будут добавлены позже.");
+    // Тест к уроку — встроенный тест с моментальной проверкой.
+    const testBlock = (l.tests && l.tests.length)
+      ? `<div class="lesson-block">
+           <div class="block-head"><span class="ic">${icon.quiz}</span>Тест к уроку</div>
+           <div id="quiz">${renderQuiz(l.tests)}</div>
+         </div>`
+      : "";
+
+    // Вопросы к уроку — открытые, без вариантов ответа.
+    const questionsBlock = (l.questions && l.questions.length)
+      ? `<div class="lesson-block">
+           <div class="block-head"><span class="ic">${icon.list}</span>Вопросы к уроку</div>
+           <ol class="lesson-questions">${l.questions.map((q) => `<li>${esc(q)}</li>`).join("")}</ol>
+         </div>`
+      : "";
 
     app.innerHTML =
       crumbs([
@@ -174,12 +242,10 @@
            <div class="block-head"><span class="ic">${icon.audio}</span>Аудио урока</div>${audio}
          </div>
          <div class="lesson-block">
-           <div class="block-head"><span class="ic">${icon.text}</span>Текст урока</div>${text}
+           <div class="block-head"><span class="ic">${icon.text}</span>Текст к уроку</div>${text}
          </div>
-         <div class="lesson-block">
-           <div class="block-head"><span class="ic">${icon.quiz}</span>Тесты для проверки знаний</div>
-           <div id="quiz">${tests}</div>
-         </div>`
+         ${testBlock}
+         ${questionsBlock}`
       );
 
     if (l.tests && l.tests.length) bindQuiz(l.tests);
@@ -207,7 +273,9 @@
   }
 
   function bindQuiz(tests) {
-    document.getElementById("checkQuiz").onclick = () => {
+    const btn = document.getElementById("checkQuiz");
+    if (!btn) return;
+    btn.onclick = () => {
       let correct = 0;
       tests.forEach((t, i) => {
         const sel = document.querySelector(`input[name="q${i}"]:checked`);
@@ -324,6 +392,8 @@
     if (parts[0] === "section") {
       if (parts.length === 2) return sectionPage(parts[1]);
       if (parts[2] === "cycle" && parts.length === 4) return cyclePage(parts[1], parts[3]);
+      if (parts[2] === "cycle" && parts[4] === "test" && parts.length === 5)
+        return finalTestPage(parts[1], parts[3]);
       if (parts[2] === "cycle" && parts[4] === "lesson" && parts.length === 6)
         return lessonPage(parts[1], parts[3], parts[5]);
     }
