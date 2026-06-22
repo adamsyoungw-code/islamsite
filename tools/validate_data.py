@@ -137,6 +137,14 @@ def main():
                 if not les.get("text"):
                     warn(f"{l_where}: пустой текст урока")
             check_test_url(cyc.get("finalTestUrl"), c_where)
+            ft = cyc.get("finalTest")
+            if ft is not None:
+                if not isinstance(ft, dict) or not isinstance(ft.get("questions"), list):
+                    err(f"{c_where}: finalTest должен содержать массив questions")
+                else:
+                    check_tests(ft["questions"], f"{c_where} / итоговый тест")
+                    if not isinstance(ft.get("timeLimitMin"), int) or ft["timeLimitMin"] <= 0:
+                        err(f"{c_where}: timeLimitMin должен быть положительным числом")
 
     for b_i, book in enumerate(data.get("library", [])):
         b_where = f"библиотека / книга #{b_i} ({book.get('title', '?')})"

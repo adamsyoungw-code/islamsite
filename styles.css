@@ -312,6 +312,21 @@ a.card:hover {
 }
 .quiz-result.show { display: block; }
 
+.card-final p { margin: 6px 0 0; color: var(--muted, #777); font-size: 14px; }
+.final-timer {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: inline-block;
+  font-weight: 700;
+  padding: 8px 16px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  background: rgba(31,71,51,0.09);
+  color: var(--accent);
+}
+.final-timer.urgent { background: #fbeeeb; color: #c0584a; }
+
 /* ---------- Auth ---------- */
 .auth-card {
   max-width: 410px;

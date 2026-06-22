@@ -131,11 +131,12 @@
       <a class="card" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/lesson/${esc(l.id)}">
         <h3>${esc(l.title)}</h3>
       </a>`).join("") || emptyState("Уроки скоро появятся.");
-    const finalTest = (c.finalTestUrl && c.finalTestUrl.includes("/viewform"))
-      ? `<div class="lesson-block final-test">
-           <div class="block-head"><span class="ic">${icon.quiz}</span>Итоговый тест цикла</div>
-           <a class="btn btn-primary test-open" href="${esc(c.finalTestUrl)}" target="_blank" rel="noopener">Пройти итоговый тест ↗</a>
-         </div>`
+    const n = (c.lessons || []).length;
+    const finalCard = (c.finalTest && c.finalTest.questions && c.finalTest.questions.length)
+      ? `<a class="card card-final" href="#/section/${esc(s.id)}/cycle/${esc(c.id)}/test">
+           <h3>${n + 1}. Итоговый тест</h3>
+           <p>${c.finalTest.questions.length} вопросов · ${c.finalTest.timeLimitMin} минут</p>
+         </a>`
       : "";
     app.innerHTML =
       crumbs([
@@ -143,7 +144,55 @@
         { label: s.title, href: `#/section/${s.id}` },
         { label: c.title },
       ]) +
-      page(head(c.title, c.level || "") + `<div class="card-list">${cards}</div>` + finalTest);
+      page(head(c.title, c.level || "") + `<div class="card-list">${cards}${finalCard}</div>`);
+  }
+
+  function finalTestPage(sid, cid) {
+    const s = find(DATA.sections, sid);
+    const c = s && find(s.cycles, cid);
+    const ft = c && c.finalTest;
+    if (!s || !c || !ft || !ft.questions || !ft.questions.length) return notFound();
+
+    app.innerHTML =
+      crumbs([
+        { label: "Разделы", href: "#/" },
+        { label: s.title, href: `#/section/${s.id}` },
+        { label: c.title, href: `#/section/${s.id}/cycle/${c.id}` },
+        { label: "Итоговый тест" },
+      ]) +
+      page(
+        head("Итоговый тест", `${ft.questions.length} вопросов · на выполнение ${ft.timeLimitMin} минут`) +
+        `<div class="final-timer" id="finalTimer"></div>
+         <div id="quiz">${renderQuiz(ft.questions)}</div>`
+      );
+
+    bindQuiz(ft.questions);
+    startTimer(ft.timeLimitMin * 60);
+  }
+
+  // Таймер итогового теста: по истечении времени автоматически проверяет ответы.
+  function startTimer(totalSec) {
+    const el = document.getElementById("finalTimer");
+    if (!el) return;
+    let left = totalSec;
+    const tick = () => {
+      const m = String(Math.floor(left / 60)).padStart(2, "0");
+      const sec = String(left % 60).padStart(2, "0");
+      el.textContent = `Осталось времени: ${m}:${sec}`;
+      el.classList.toggle("urgent", left <= 60);
+      if (left <= 0) {
+        clearInterval(timerId);
+        el.textContent = "Время вышло";
+        const btn = document.getElementById("checkQuiz");
+        if (btn) btn.click();
+        return;
+      }
+      left--;
+    };
+    tick();
+    const timerId = setInterval(tick, 1000);
+    // остановить таймер при уходе со страницы
+    window.addEventListener("hashchange", () => clearInterval(timerId), { once: true });
   }
 
   function lessonPage(sid, cid, lid) {
@@ -354,6 +403,8 @@
     if (parts[0] === "section") {
       if (parts.length === 2) return sectionPage(parts[1]);
       if (parts[2] === "cycle" && parts.length === 4) return cyclePage(parts[1], parts[3]);
+      if (parts[2] === "cycle" && parts[4] === "test" && parts.length === 5)
+        return finalTestPage(parts[1], parts[3]);
       if (parts[2] === "cycle" && parts[4] === "lesson" && parts.length === 6)
         return lessonPage(parts[1], parts[3], parts[5]);
     }
