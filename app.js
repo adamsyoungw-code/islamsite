@@ -213,22 +213,11 @@
       ? `<div class="lesson-text">${esc(l.text)}</div>`
       : emptyState("Текст к уроку будет добавлен позже.");
 
-    // Тест к уроку. Приоритет — встроенный тест на сайте (l.tests); иначе
-    // встраиваем публичную гугл-форму (/viewform). Ссылки на редактор (/edit)
-    // посетителям недоступны, поэтому такой блок не показываем.
-    const isPublicForm = l.testUrl && l.testUrl.includes("/viewform");
-    let testInner = "";
-    if (l.tests && l.tests.length) {
-      testInner = `<div id="quiz">${renderQuiz(l.tests)}</div>`;
-    } else if (isPublicForm) {
-      testInner =
-        `<iframe class="test-frame" src="${esc(l.testUrl)}${l.testUrl.includes("?") ? "&" : "?"}embedded=true" loading="lazy" title="Тест к уроку">Загрузка теста…</iframe>
-         <a class="btn test-open" href="${esc(l.testUrl)}" target="_blank" rel="noopener">Открыть тест в новой вкладке ↗</a>`;
-    }
-    const testBlock = testInner
+    // Тест к уроку — встроенный тест с моментальной проверкой.
+    const testBlock = (l.tests && l.tests.length)
       ? `<div class="lesson-block">
            <div class="block-head"><span class="ic">${icon.quiz}</span>Тест к уроку</div>
-           ${testInner}
+           <div id="quiz">${renderQuiz(l.tests)}</div>
          </div>`
       : "";
 
