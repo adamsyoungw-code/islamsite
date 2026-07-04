@@ -99,14 +99,83 @@
 
   /* ---------- Pages ---------- */
   function homePage() {
-    const cards = DATA.sections.map((s) => `
+    // сводная статистика по всем данным
+    let cycles = 0, lessons = 0, audioN = 0, testQ = 0;
+    DATA.sections.forEach((s) => (s.cycles || []).forEach((c) => {
+      cycles++;
+      (c.lessons || []).forEach((l) => {
+        lessons++;
+        if (l.audio) audioN++;
+        if (l.tests) testQ += l.tests.length;
+      });
+      if (c.finalTest && c.finalTest.questions) testQ += c.finalTest.questions.length;
+    }));
+
+    // «Продолжить обучение» — последний открытый урок
+    let contBtn = "";
+    try {
+      const last = JSON.parse(localStorage.getItem("lastLesson") || "null");
+      if (last) {
+        const s = find(DATA.sections, last.sid);
+        const c = s && find(s.cycles, last.cid);
+        const l = c && find(c.lessons, last.lid);
+        if (l) contBtn = `<a class="btn" href="#/section/${esc(last.sid)}/cycle/${esc(last.cid)}/lesson/${esc(last.lid)}">Продолжить: ${esc(l.title)}</a>`;
+      }
+    } catch (e) { /* повреждённый localStorage — игнорируем */ }
+
+    const firstSection = DATA.sections[0];
+    const startBtn = firstSection
+      ? `<a class="btn btn-hero-ghost" href="#/section/${esc(firstSection.id)}">${contBtn ? "К разделам" : "Начать обучение"}</a>`
+      : "";
+
+    const cards = DATA.sections.map((s) => {
+      const nc = s.cycles ? s.cycles.length : 0;
+      const nl = (s.cycles || []).reduce((n, c) => n + (c.lessons ? c.lessons.length : 0), 0);
+      return `
       <a class="card" href="#/section/${esc(s.id)}">
         <h3>${esc(s.title)}</h3>
         <p>${esc(s.description || "")}</p>
-        <span class="meta">Циклов: ${s.cycles ? s.cycles.length : 0}</span>
-      </a>`).join("");
-    app.innerHTML = page(head("Разделы", "Выберите раздел исламских наук.") +
-      `<div class="card-list">${cards}</div>`);
+        <span class="meta">Циклов: ${nc}${nl ? ` · уроков: ${nl}` : ""}</span>
+      </a>`;
+    }).join("");
+
+    app.innerHTML = `
+      <section class="hero">
+        <svg class="hero-ornament" width="360" height="360" viewBox="0 0 100 100" aria-hidden="true">
+          <g fill="none" stroke="#d9c7a3" stroke-opacity="0.25" stroke-width="0.6">
+            <rect x="25" y="25" width="50" height="50"/>
+            <rect x="25" y="25" width="50" height="50" transform="rotate(45 50 50)"/>
+            <circle cx="50" cy="50" r="16"/>
+            <circle cx="50" cy="50" r="34"/>
+          </g>
+        </svg>
+        <div class="container hero-inner">
+          <span class="hero-kicker">طلب العلم فريضة</span>
+          <h1>Исламские науки — шаг за шагом, от урока к уроку</h1>
+          <p class="lead">Циклы уроков с аудио, конспектами и тестами для самопроверки. Учитесь в удобном темпе — прогресс всегда под рукой.</p>
+          <div class="hero-actions">${contBtn}${startBtn}<a class="btn btn-hero-ghost" href="#/library">Библиотека</a></div>
+          <div class="hero-stats">
+            <div class="stat"><b>${DATA.sections.length}</b><span>${plural(DATA.sections.length, "раздел", "раздела", "разделов")}</span></div>
+            <div class="stat"><b>${lessons}</b><span>${plural(lessons, "урок", "урока", "уроков")}</span></div>
+            <div class="stat"><b>${audioN}</b><span>аудио</span></div>
+            <div class="stat"><b>${testQ}</b><span>вопросов в тестах</span></div>
+          </div>
+        </div>
+      </section>
+      <div class="container page home-sections">
+        <div class="section-heading">
+          <h2>Разделы</h2>
+          <span class="hint">выберите науку, чтобы начать</span>
+        </div>
+        <div class="card-list">${cards}</div>
+      </div>`;
+  }
+
+  function plural(n, one, few, many) {
+    const m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+    return many;
   }
 
   function sectionPage(id) {
@@ -200,6 +269,11 @@
     const c = s && find(s.cycles, cid);
     const l = c && find(c.lessons, lid);
     if (!s || !c || !l) return notFound();
+
+    // запоминаем последний открытый урок для кнопки «Продолжить» на главной
+    try {
+      localStorage.setItem("lastLesson", JSON.stringify({ sid: s.id, cid: c.id, lid: l.id }));
+    } catch (e) { /* приватный режим — не критично */ }
 
     const audio = l.audio
       ? `<button class="btn btn-primary play-lesson" data-play-key="${esc(l.id)}"
@@ -381,10 +455,20 @@
   }
 
   /* ---------- Router ---------- */
+  function setActiveNav() {
+    const h = location.hash || "#/";
+    document.querySelectorAll("[data-nav]").forEach((a) => {
+      const target = a.getAttribute("href");
+      const active = target === "#/" ? (h === "#/" || h === "" || h === "#") : h.startsWith(target);
+      a.classList.toggle("active", active);
+    });
+  }
+
   function router() {
     const parts = (location.hash.replace(/^#\/?/, "")).split("/").filter(Boolean);
     window.scrollTo(0, 0);
     closeNav();
+    setActiveNav();
     if (parts.length === 0) return homePage();
     if (parts[0] === "library") return libraryPage();
     if (parts[0] === "login") return loginPage();
@@ -409,6 +493,17 @@
     const open = mainNav.classList.toggle("open");
     navToggle.setAttribute("aria-expanded", String(open));
   };
+
+  /* ---------- Theme ---------- */
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.onclick = () => {
+      const next = document.documentElement.dataset.theme === "dark" ? "" : "dark";
+      if (next) document.documentElement.dataset.theme = next;
+      else delete document.documentElement.dataset.theme;
+      try { localStorage.setItem("theme", next); } catch (e) { /* ок */ }
+    };
+  }
 
   /* ---------- Init ---------- */
   fetch("data.json?v=" + Date.now(), { cache: "no-store" })
